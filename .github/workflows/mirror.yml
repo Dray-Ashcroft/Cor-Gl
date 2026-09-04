@@ -1,1 +1,24 @@
+name: Mirror to Codeberg
 
+on:
+  push:
+    branches: ["**"]
+    tags: ["**"]
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror to Codeberg
+        uses: cssnr/mirror-repository-action@v1
+        with:
+          host: https://codeberg.org
+          username: Dray-Ashcroft
+          password: ${{ secrets.CODEBERG_TOKEN }}
