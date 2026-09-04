@@ -1,4 +1,4 @@
-align="center">  <img src="assets/banner.png" alt="EndoX — Corpus Glandula" width="100%">
+<align="center">  <img src="assets/banner.png" alt="EndoX — Corpus Glandula" width="100%">
 </p>
 
 # 🧬 EndoX — Corpus Glandula
