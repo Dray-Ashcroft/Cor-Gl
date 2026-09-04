@@ -41,7 +41,7 @@ Optimized for desktop and mobile devices.
 **HTML · CSS · JavaScript**
 
 **Asset Delivery:** Supabase  
-**Repository:** Replit  
+**Repository:** Github, Codeberg  
 **Hosting:** Cloudflare
 
 ---
