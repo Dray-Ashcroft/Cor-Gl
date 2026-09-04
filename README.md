@@ -1,46 +1,11 @@
-<p align="center">
-  <img src="assets/banner.png" alt="EndoX — Corpus Glandula" width="100%">
+align="center">  <img src="assets/banner.png" alt="EndoX — Corpus Glandula" width="100%">
 </p>
 
 # 🧬 EndoX — Corpus Glandula
 
 ### *Interactive Endocrine System Simulator*
 
-> An interactive simulator exploring the human endocrine system through 3D anatomy, hormonal regulation, and physiological responses.
-
-**🧬 Endocrinology · 🧠 Hormonal Regulation ·  🩸 Physiology**
-
----
-
-## ✦ Features
-
-**🧍 Interactive 3D Anatomy**  
-Explore the human endocrine system through a rotatable body model.
-
-**🧪 Hormone Simulations**  
-Visualize physiological responses using interactive controls.
-
-**🔬 Scientific Visualization**  
-Browser-based interface designed for educational and scientifically accurate exploration.
-
-**📱 Responsive Design**  
-Optimized for desktop and mobile devices.
-
----
-
-## ⚙️ Technology
-
-**HTML · CSS · JavaScript**
-
-<p align="center">
-  <img src="assets/banner.png" alt="EndoX — Corpus Glandula" width="100%">
-</p>
-
-# 🧬 EndoX — Corpus Glandula
-
-### *Interactive Endocrine System Simulator*
-
-> An interactive simulator exploring the human endocrine system through 3D anatomy, hormonal regulation, and physiological responses.
+>  An interactive simulator exploring the human endocrine system through 3D anatomy, hormonal regulation, and physiological responses.
 
 **🧬 Endocrinology · 🧠 Hormonal Regulation · 🩸 Physiology**
 
