@@ -42,7 +42,7 @@ Optimized for desktop and mobile devices.
 
 **Asset Delivery:** Supabase  
 **Repository:** Replit  
-**Hosting:** GitHub Pages
+**Hosting:** Cloudflare
 
 ---
 
