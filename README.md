@@ -2,7 +2,7 @@
   <img src="assets/banner.png" alt="EndoX — Corpus Glandula" width="100%">
 </p>
 
-# 🧬 EndoX — Corpus Glandula
+# 🧬 Corpus Glandula
 
 ### *Interactive Endocrine System Simulator*
 
