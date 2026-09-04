@@ -1,32 +1,32 @@
-<p <align="center">
-  <img src="assets/banner.png" alt="EndoX — Corpus Glandula" width="100%">
+<p align="center">
+  <img src="assets/banner.png" alt="Corpus Glandula — Interactive Endocrine System Simulator" width="100%">
 </p>
 
 # 🧬 Corpus Glandula
 
 ### *Interactive Endocrine System Simulator*
 
->  An interactive simulator exploring the human endocrine system through 3D anatomy, hormonal regulation, and physiological responses.
+> **Corpus Glandula** is an interactive visualization exploring the **human endocrine system**, hormonal regulation, and physiological responses through 3D anatomy and simulation.
 
-**🧬 Endocrinology · 🧠 Hormonal Regulation · 🩸 Physiology**
+> 🧬 **Endocrinology** · 🧠 **Hormonal Regulation** · 🩸 **Physiology**
 
-**🔬 [Explore Simulation](https://cor-gl.dray-ashcroft.workers.dev/)**
+**🔬 [Explore the Simulation](https://cor-gl.dray-ashcroft.workers.dev/)**
 
 ---
 
 ## ✦ Features
 
 **🧍 Interactive 3D Anatomy**  
-Explore the human endocrine system through a rotatable body model.
+Explore the human endocrine system through an interactive, rotatable 3D body model.
 
 **🧪 Hormone Simulations**  
-Visualize physiological responses using interactive controls.
+Visualize hormonal activity and physiological responses through interactive controls.
 
 **🔬 Scientific Visualization**  
-Explore endocrine structures and physiological processes through an interactive browser-based interface.
+Explore endocrine structures and physiological processes through a browser-based interactive experience.
 
 **📱 Responsive Design**  
-Optimized for desktop and mobile devices.
+Optimized for modern desktop and mobile devices.
 
 ---
 
@@ -41,7 +41,7 @@ Optimized for desktop and mobile devices.
 **HTML · CSS · JavaScript**
 
 **Asset Delivery:** Supabase  
-**Repository:** Github, Codeberg  
+**Repository:** GitHub & Codeberg  
 **Hosting:** Cloudflare
 
 ---
