@@ -10,7 +10,7 @@
 
 > 🧬 **Endocrinology** · 🧠 **Hormonal Regulation** · 🩸 **Physiology**
 
-**🔬 [Explore the Simulation](https://cor-gl.dray-ashcroft.workers.dev/)**
+**🔬 [Explore the Simulation](https://corpus-glandula.dray-ashcroft.workers.dev/)**
 
 ---
 
