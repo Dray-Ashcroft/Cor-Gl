@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Corpus Glandula — Interactive Endocrine System Simulator" width="100%">
+  <img src="assets/banner/banner.png" alt="Corpus Glandula — Interactive Endocrine System Simulator" width="100%">
 </p>
 
 # 🧬 Corpus Glandula
