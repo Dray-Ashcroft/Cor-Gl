@@ -1,51 +1,36 @@
 <p align="center">
   <img src="assets/banner/banner.png" alt="Corpus Glandula — Interactive Endocrine System Simulator" width="100%">
-</p>
+</p><h1 align="center">🧬 Corpus Glandula</h1><h3 align="center"><em>Interactive Endocrine System Simulator</em></h3>An interactive 3D visualization of the human endocrine system, exploring hormone regulation and physiological responses.
 
-# 🧬 Corpus Glandula
+<p align="center">
+  <a href="https://cor-gl.stark-kodex.workers.dev"><strong>Explore the Simulation →</strong></a>
+</p>---
 
-### *Interactive Endocrine System Simulator*
+✨ Features
 
-> **Corpus Glandula** is an interactive visualization exploring the **human endocrine system**, hormonal regulation, and physiological responses through 3D anatomy and simulation.
-
-> 🧬 **Endocrinology** · 🧠 **Hormonal Regulation** · 🩸 **Physiology**
-
-**🔬 [Explore the Simulation](https://cor-gl.stark-kodex.workers.dev)**
-
----
-
-## ✦ Features
-
-**🧍 Interactive 3D Anatomy**  
-Explore the human endocrine system through an interactive, rotatable 3D body model.
-
-**🧪 Hormone Simulations**  
-Visualize hormonal activity and physiological responses through interactive controls.
-
-**🔬 Scientific Visualization**  
-Explore endocrine structures and physiological processes through a browser-based interactive experience.
-
-**📱 Responsive Design**  
-Optimized for modern desktop and mobile devices.
+- 🧍 3D Anatomy — Explore and rotate the human body model.
+- 🧪 Hormone Simulations — Investigate hormonal activity and physiological responses.
+- 🔬 Scientific Visualization — Explore endocrine structures and processes.
+- 📱 Responsive Design — Supports desktop and mobile devices.
 
 ---
 
-## 🧬 Core Concepts
+🧬 Core Concepts
 
-**Endocrine Glands · Hormones · Hormonal Regulation · Homeostasis · Physiological Responses · 3D Anatomy**
-
----
-
-## ⚙️ Technology
-
-**HTML · CSS · JavaScript**
-
-**Asset Delivery:** Supabase  
-**Repository:** GitHub & Codeberg  
-**Hosting:** Cloudflare
+Endocrine Glands · Hormones · Homeostasis · Hormonal Regulation · Physiological Responses
 
 ---
 
-## 📜 License
+🧑🏻‍💻 Technology
 
-**GNU General Public License v3.0 (GPL-3.0)**
+HTML · CSS · JavaScript
+
+Asset Delivery:GitHub Repo
+Repository: GitHub & Codeberg
+Hosting: Cloudflare
+
+---
+
+📜 License
+
+Distributed under the "GNU GPL-3.0 License" (LICENSE).
