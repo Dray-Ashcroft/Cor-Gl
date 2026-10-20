@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner/banner.png" alt="Corpus Glandula — Interactive Endocrine System Simulator" width="100%">
+  <img src="assets/banner/repo-banner.png" alt="Corpus Glandula — Interactive Endocrine System Simulator" width="100%">
 </p><h1 align="center">🧬 Corpus Glandula</h1><h3 align="center"><em>Interactive Endocrine System Simulator</em></h3>An interactive 3D visualization of the human endocrine system, exploring hormone regulation and physiological responses.
 
 <p align="center">
