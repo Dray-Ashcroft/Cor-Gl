@@ -1656,33 +1656,195 @@ function animateImage(id){
 }
 var OV={phase:'idle',t0:0};
 var BDEV={stage:0,target:0,t0:0,fromStage:0,animating:false};
+/* Breast development across life. The number of lobes (~15-20) is set early; what changes is how far the
+   ducts grow and branch and how many LOBULES (milk-forming clusters) form at their ends.
+   lobes = duct branches drawn, cluster = lobules per branch, prl = prolactin (bar). */
 var DEV_STAGES=[
- {name:'Prepubertal',age:'~10 yrs',mound:0.22,lobes:3,lobeScale:0.42,estro:14,note:'Estrogen is low \u2014 mostly fat and skin, with only tiny ducts and almost no glandular tissue yet.'},
- {name:'Adolescent',age:'~16 yrs',mound:0.62,lobes:7,lobeScale:0.74,estro:55,note:'Rising estrogen makes ducts branch and lobules begin forming \u2014 the breast mound grows.'},
- {name:'Mature Adult',age:'~25 yrs',mound:1.0,lobes:12,lobeScale:1.0,estro:85,note:'Full glandular development. Estrogen (with progesterone) drives monthly cyclical change.'},
- {name:'Postmenopausal',age:'~55 yrs',mound:0.62,lobes:4,lobeScale:0.55,estro:18,note:'Estrogen production falls after menopause \u2014 glandular tissue is gradually replaced by fat.'}
+ {name:'Prepubertal',age:'~10 yrs',mound:0.22,lobes:3,lobeScale:0.42,cluster:0.55,estro:14,prl:6,note:'Estrogen is low — mostly fat and skin, with only a few short ducts and no lobules yet.'},
+ {name:'Adolescent',age:'~16 yrs',mound:0.62,lobes:7,lobeScale:0.74,cluster:1.0,estro:55,prl:10,note:'Rising <b>estrogen</b> makes the ducts lengthen and branch, and the first <b>lobules</b> form — the breast grows.'},
+ {name:'Mature Adult',age:'~25 yrs',mound:1.0,lobes:12,lobeScale:1.0,cluster:1.45,estro:85,prl:14,note:'Ducts are fully branched with lobules at their ends. Estrogen and progesterone cause small monthly changes.'},
+ {name:'Pregnancy & lactation',age:'',mound:1.14,lobes:12,lobeScale:1.25,cluster:2.6,estro:100,prl:96,note:'<b>Progesterone</b> and <b>prolactin</b> make the lobules multiply and fill with milk-producing alveoli. <b>Oxytocin</b> from the pituitary then ejects the milk.'},
+ {name:'Postmenopausal',age:'~55 yrs',mound:0.62,lobes:4,lobeScale:0.55,cluster:0.7,estro:18,prl:8,note:'Estrogen production falls after menopause — lobules shrink and glandular tissue is gradually replaced by fat.'}
 ];
+var DEV_LAST=DEV_STAGES.length-1;
 function devLerp(s){
-  s=Math.max(0,Math.min(3,s));
-  var i=Math.min(2,Math.floor(s)), f=s-i;
-  var a=DEV_STAGES[i], b=DEV_STAGES[i+1];
-  return {mound:a.mound+(b.mound-a.mound)*f, lobes:a.lobes+(b.lobes-a.lobes)*f, lobeScale:a.lobeScale+(b.lobeScale-a.lobeScale)*f, estro:a.estro+(b.estro-a.estro)*f};
+  s=Math.max(0,Math.min(DEV_LAST,s));
+  var i=Math.min(DEV_LAST-1,Math.floor(s)), f=s-i;
+  var a=DEV_STAGES[i], b=DEV_STAGES[i+1],L=function(k){return a[k]+(b[k]-a[k])*f;};
+  return {mound:L('mound'),lobes:L('lobes'),lobeScale:L('lobeScale'),cluster:L('cluster'),estro:L('estro'),prl:L('prl')};
 }
 function updateDevCard(idx){
   var card=document.getElementById('devCard');if(!card)return;
   var S=DEV_STAGES[idx];
-  card.classList.remove('devfade');
-  card.innerHTML='<div class="devstage-name">'+S.name+' <span class="devage">('+S.age+')</span></div><div class="devnote">'+S.note+'</div>';
+  card.classList.remove('devfade');void card.offsetWidth;
+  card.innerHTML='<div class="devstage-name">'+S.name+(S.age?' <span class="devage">('+S.age+')</span>':'')+'</div><div class="devnote">'+S.note+'</div>';
   card.classList.add('devfade');
   var dp=document.getElementById('devPrev'), dn=document.getElementById('devNext');
   if(dp) dp.disabled=(idx===0);
-  if(dn) dn.disabled=(idx===3);
+  if(dn) dn.disabled=(idx===DEV_LAST);
 }
 function goDevStage(idx){
-  idx=Math.max(0,Math.min(3,idx));
+  idx=Math.max(0,Math.min(DEV_LAST,idx));
   if(idx===BDEV.target && !BDEV.animating) return;
   BDEV.fromStage=BDEV.stage;BDEV.target=idx;BDEV.t0=Date.now();BDEV.animating=true;
   updateDevCard(idx);
+}
+/* Adult reference figure for the breast-development lab (cartoon_body.glb). It never changes with the
+   stages: it only shows WHERE the section is taken (ring on the left breast + leader line). */
+function refBodyMesh(g){
+  if(g.ref)return g.ref;
+  var d=REF_BODY,gl=g.gl,q=new Int16Array(b64ToBuf(d.v)),nq=new Int8Array(b64ToBuf(d.n)),ix=new Uint16Array(b64ToBuf(d.i));
+  var P=new Float32Array(q.length),N=new Float32Array(nq.length);for(var k=0;k<q.length;k++){P[k]=q[k]/30000;N[k]=nq[k]/127;}
+  function buf(a,type){var b=gl.createBuffer();gl.bindBuffer(type,b);gl.bufferData(type,a,gl.STATIC_DRAW);return b;}
+  g.ref={bP:buf(P,gl.ARRAY_BUFFER),bN:buf(N,gl.ARRAY_BUFFER),bC:buf(new Float32Array(d.nv),gl.ARRAY_BUFFER),bI:buf(ix,gl.ELEMENT_ARRAY_BUFFER),count:ix.length,apex:d.apex};
+  return g.ref;
+}
+/* draws the figure into the left strip of the 2D context; returns the screen point of the breast ring, or null */
+function drawRefBody(g2,x0,y0,bw,bh){
+  if(typeof REF_BODY==='undefined')return null;
+  var g=ghfInit();if(!g)return null;
+  try{
+    var m=refBodyMesh(g),gl=g.gl,gc=g.cv,dpr=Math.min(2,window.devicePixelRatio||1),pw=Math.round(bw*dpr),ph=Math.round(bh*dpr);
+    if(gc.width!==pw||gc.height!==ph){gc.width=pw;gc.height=ph;}
+    var S=Math.min(bh-14,(bw-6)/0.80),ground=bh-7,cx=bw/2,   // fit height, and the A-pose arm span (~0.74 of height)
+        yaw=-0.30+0.16*Math.sin(Date.now()*0.0005);
+    gl.viewport(0,0,pw,ph);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);gl.useProgram(g.pr);
+    gl.uniform1f(g.u.uYaw,yaw);gl.uniform1f(g.u.uS,S);gl.uniform1f(g.u.uG,ground);gl.uniform1f(g.u.uCx,cx);gl.uniform1f(g.u.uW,bw);gl.uniform1f(g.u.uH,bh);
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.bP);gl.enableVertexAttribArray(g.aP);gl.vertexAttribPointer(g.aP,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.bN);gl.enableVertexAttribArray(g.aN);gl.vertexAttribPointer(g.aN,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,m.bC);gl.enableVertexAttribArray(g.aC);gl.vertexAttribPointer(g.aC,1,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.bI);gl.drawElements(gl.TRIANGLES,m.count,gl.UNSIGNED_SHORT,0);
+    g2.drawImage(gc,x0,y0,bw,bh);
+    var a=m.apex,c=Math.cos(yaw),s=Math.sin(yaw);   // same rotation/projection as the shader
+    return {x:x0+cx+(a[0]*c+a[2]*s)*S,y:y0+ground-a[1]*S,r:Math.max(5,S*0.045)};
+  }catch(e){return null;}
+}
+/* ===== 3D breast close-up with mammary glands (Ovary tab -> breast development) =====
+   Adult reference body (cartoon_body.glb). The breast skin is drawn semi-transparent so the ducts and
+   lobules inside show through, over a pectoral-muscle backing. ADULT stages only on the 3D body:
+     Mature adult (base) -> Pregnancy & lactation (breast enlarges, lobules multiply)
+     -> Postmenopausal (smaller, softer, lobules regress).
+   For the prepubertal/adolescent stages the 3D view fades and the cut-section carries the change. */
+var BR3=null;
+var BR_C=[0.037,0.744],BR_R=[0.030,0.032],BR_WALL=0.046;   // breast centre, radii, chest-wall depth (normalised body units)
+function br3Init(){
+  if(BR3!==null)return BR3||null;
+  BR3=false;
+  var g=ghfInit();if(!g||typeof REF_BODY==='undefined')return null;
+  try{
+    var gl=g.gl;
+    var VS='precision highp float;attribute vec3 aP;attribute vec3 aN;attribute float aW;attribute float aA;uniform float uYaw,uS,uOx,uOy,uW,uH,uPt;'+
+      'varying vec3 vN;varying float vW,vA;void main(){float c=cos(uYaw),s=sin(uYaw);vec3 p=vec3(aP.x*c+aP.z*s,aP.y,-aP.x*s+aP.z*c);'+
+      'vN=vec3(aN.x*c+aN.z*s,aN.y,-aN.x*s+aN.z*c);vW=aW;vA=aA;float px=uOx+p.x*uS,py=uOy-p.y*uS;'+
+      'gl_Position=vec4(px/uW*2.0-1.0,1.0-py/uH*2.0,-p.z*2.0,1.0);gl_PointSize=max(1.5,aW*uS*uPt);}';
+    var FS='precision mediump float;varying vec3 vN;varying float vW,vA;uniform float uMode,uSee;uniform vec3 uCol;'+
+      'void main(){vec3 L=normalize(vec3(-0.42,0.5,0.92)),H=normalize(L+vec3(0.,0.,1.));'+
+      'if(uMode>1.5){vec2 q=gl_PointCoord*2.0-1.0;float r=dot(q,q);if(r>1.0)discard;float z=sqrt(1.0-r);vec3 n=vec3(q.x,-q.y,z);'+   /* lobule sphere sprite */
+      ' float d=max(0.,dot(n,L));vec3 c=uCol*(0.45+0.65*d)+vec3(1.)*pow(max(0.,dot(n,H)),20.)*0.35;gl_FragColor=vec4(c,1.);return;}'+
+      'if(uMode>0.5){gl_FragColor=vec4(uCol,1.);return;}'+                                   /* ducts / chest wall */
+      'vec3 n=normalize(vN);if(!gl_FrontFacing)n=-n;vec3 col=mix(vec3(224.,181.,152.)/255.,vec3(176.,112.,100.)/255.,vA);'+
+      'float wrap=max(0.,dot(n,L)*0.65+0.35),sp=pow(max(0.,dot(n,H)),26.)*0.35,fr=pow(1.-min(1.,abs(n.z)),3.)*0.3;'+
+      'vec3 c=col*(0.34+0.66*wrap);c=mix(c,min(vec3(1.),col*1.2+0.12),fr);c=mix(c,vec3(1.),sp);'+
+      'float a=1.0-0.62*vW*uSee;gl_FragColor=vec4(c*a,a);}';                                  /* premultiplied: see-through breast skin */
+    function sh(t,src){var s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+    var pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);
+    if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pr));
+    var d=REF_BODY,q=new Int16Array(b64ToBuf(d.v)),nq=new Int8Array(b64ToBuf(d.n)),ix=new Uint16Array(b64ToBuf(d.i)),n=d.nv;
+    var P=new Float32Array(3*n),W=new Float32Array(n),A=new Float32Array(n),prof=new Float32Array(n),ap=d.apex;
+    for(var k=0;k<n;k++){P[3*k]=q[3*k]/30000;P[3*k+1]=q[3*k+1]/30000;P[3*k+2]=q[3*k+2]/30000;
+      var x=P[3*k],y=P[3*k+1],z=P[3*k+2],ax=Math.abs(x);
+      var dd=Math.hypot((ax-BR_C[0])/BR_R[0],(y-BR_C[1])/BR_R[1]),front=z>BR_WALL-0.004&&nq[3*k+2]>20;
+      prof[k]=front&&dd<1?Math.pow(1-dd*dd,2):0;                                   // growth profile (0 at breast edge)
+      W[k]=front?ghfSmooth(0.78,0.42,dd):0;                                           // see-through weight
+      var da=Math.hypot(ax-ap[0],y-ap[1],z-ap[2]);A[k]=ghfSmooth(0.0085,0.0045,da);    // areola tint
+    }
+    function buf(a,type,u){var b=gl.createBuffer();gl.bindBuffer(type,b);gl.bufferData(type,a,u||gl.STATIC_DRAW);return b;}
+    BR3={g:g,gl:gl,pr:pr,P:P,prof:prof,ix:ix,n:n,out:new Float32Array(3*n),N:new Float32Array(3*n),key:null,apex:ap,
+      bP:buf(new Float32Array(3*n),gl.ARRAY_BUFFER,gl.DYNAMIC_DRAW),bN:buf(new Float32Array(3*n),gl.ARRAY_BUFFER,gl.DYNAMIC_DRAW),bW:buf(W,gl.ARRAY_BUFFER),bA:buf(A,gl.ARRAY_BUFFER),bI:buf(ix,gl.ELEMENT_ARRAY_BUFFER),
+      gP:gl.createBuffer(),gZ:gl.createBuffer(),gS:gl.createBuffer(),u:{},a:{}};
+    ['aP','aN','aW','aA'].forEach(function(nm){BR3.a[nm]=gl.getAttribLocation(pr,nm);});
+    ['uYaw','uS','uOx','uOy','uW','uH','uPt','uMode','uSee','uCol'].forEach(function(nm){BR3.u[nm]=gl.getUniformLocation(pr,nm);});
+    return BR3;
+  }catch(e){BR3=false;return null;}
+}
+/* breast shape for a stage value (2 adult, 3 pregnancy/lactation, 4 postmenopausal) */
+function br3Shape(st){
+  st=Math.max(2,Math.min(4,st));
+  var a=Math.min(1,st-2),b=Math.max(0,st-3);
+  return {grow:0.011*a*(1-b)-0.004*b, spread:1+0.10*a*(1-b)-0.04*b, droop:-0.006*b};
+}
+function br3Morph(B,sh){
+  var key=sh.grow.toFixed(4)+'|'+sh.spread.toFixed(3)+'|'+sh.droop.toFixed(4);if(B.key===key)return;B.key=key;
+  var P=B.P,o=B.out,pf=B.prof;
+  for(var i=0;i<B.n;i++){var x=P[3*i],y=P[3*i+1],z=P[3*i+2],w=pf[i];
+    if(w>0){var sg=x<0?-1:1,cx=sg*BR_C[0];x=cx+(x-cx)*(1+(sh.spread-1)*w);y=BR_C[1]+(y-BR_C[1])*(1+(sh.spread-1)*w)+sh.droop*w;z+=sh.grow*w;}
+    o[3*i]=x;o[3*i+1]=y;o[3*i+2]=z;}
+  var N=B.N,ix=B.ix;N.fill(0);
+  for(var t=0;t<ix.length;t+=3){var a=3*ix[t],b=3*ix[t+1],c=3*ix[t+2];
+    var e1x=o[b]-o[a],e1y=o[b+1]-o[a+1],e1z=o[b+2]-o[a+2],e2x=o[c]-o[a],e2y=o[c+1]-o[a+1],e2z=o[c+2]-o[a+2];
+    var nx=e1y*e2z-e1z*e2y,ny=e1z*e2x-e1x*e2z,nz=e1x*e2y-e1y*e2x;N[a]+=nx;N[a+1]+=ny;N[a+2]+=nz;N[b]+=nx;N[b+1]+=ny;N[b+2]+=nz;N[c]+=nx;N[c+1]+=ny;N[c+2]+=nz;}
+  for(i=0;i<B.n;i++){var l=Math.hypot(N[3*i],N[3*i+1],N[3*i+2])||1;N[3*i]/=l;N[3*i+1]/=l;N[3*i+2]/=l;}
+  var gl=B.gl;gl.bindBuffer(gl.ARRAY_BUFFER,B.bP);gl.bufferSubData(gl.ARRAY_BUFFER,0,o);gl.bindBuffer(gl.ARRAY_BUFFER,B.bN);gl.bufferSubData(gl.ARRAY_BUFFER,0,N);
+}
+/* ducts + lobules inside both breasts. S = devLerp(stage) (lobes, cluster, lobeScale) */
+function br3Glands(sh,S){
+  var lines=[],pts=[],sizes=[],seed=11,rnd=function(){seed=(seed*9301+49297)%233280;return seed/233280;};
+  var nDuct=12,nLob=Math.max(1,S.cluster),ls=S.lobeScale;
+  [1,-1].forEach(function(sg){
+    var cx=sg*BR_C[0],cy=BR_C[1]+sh.droop*0.8,nip=[sg*BR3.apex[0],BR3.apex[1]+sh.droop,BR3.apex[2]+sh.grow-0.0015];
+    var zb=BR_WALL+0.0035,reach=BR_R[0]*0.62*sh.spread;
+    for(var i=0;i<nDuct;i++){
+      var th=i/nDuct*6.2832+rnd()*0.35,rr=reach*(0.55+0.45*rnd());
+      var T=[cx+Math.cos(th)*rr,cy+Math.sin(th)*rr*0.95,zb];
+      var M=[nip[0]+(T[0]-nip[0])*0.55,nip[1]+(T[1]-nip[1])*0.55,nip[2]+(T[2]-nip[2])*0.62];
+      lines.push(nip[0],nip[1],nip[2],M[0],M[1],M[2],M[0],M[1],M[2],T[0],T[1],T[2]);
+      var nl=Math.round((1.4+(i%2))*nLob);
+      for(var j=0;j<nl;j++){                                          // lobule cluster at the duct end (+ a few on the branch)
+        var onEnd=j<nl*0.7,base=onEnd?T:M,spr=0.0022+0.0012*Math.min(nl,6);
+        pts.push(base[0]+(rnd()-0.5)*spr*2,base[1]+(rnd()-0.5)*spr*2,base[2]+0.0018+rnd()*0.0035);
+        sizes.push((0.0019+rnd()*0.0012)*ls);
+      }
+    }
+  });
+  return {lines:new Float32Array(lines),pts:new Float32Array(pts),sizes:new Float32Array(sizes)};
+}
+function drawBreast3D(g2,x0,y0,bw,bh,stage,S){
+  var B=br3Init();if(!B)return null;
+  try{
+    var gl=B.gl,gc=B.g.cv,dpr=Math.min(2,window.devicePixelRatio||1),pw=Math.round(bw*dpr),ph=Math.round(bh*dpr);
+    if(gc.width!==pw||gc.height!==ph){gc.width=pw;gc.height=ph;}
+    var adultView=ghfSmooth(1.0,1.9,stage),sh=br3Shape(stage);   // 0 for child/teen stages -> faded
+    br3Morph(B,sh);
+    var Sg=devLerp(Math.max(2,stage)),G=br3Glands(sh,Sg);
+    var yaw=-0.62+0.10*Math.sin(Date.now()*0.0005),Sc=bh/0.25,ox=bw*0.50,oy=bh*0.5+0.735*Sc;   // 3/4 view of the chest so the breast profile shows
+    gl.viewport(0,0,pw,ph);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(B.pr);gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);
+    var u=B.u,a=B.a;gl.uniform1f(u.uYaw,yaw);gl.uniform1f(u.uS,Sc);gl.uniform1f(u.uOx,ox);gl.uniform1f(u.uOy,oy);gl.uniform1f(u.uW,bw);gl.uniform1f(u.uH,bh);gl.uniform1f(u.uPt,dpr*1.0);gl.uniform1f(u.uSee,1);
+    var att=function(loc,buf,sz){if(loc<0)return;if(buf){gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,sz,gl.FLOAT,false,0,0);}else{gl.disableVertexAttribArray(loc);}};
+    // 1) fatty-tissue backing behind the glands
+    var disc=[];[1,-1].forEach(function(sg){var cx=sg*BR_C[0],cy=BR_C[1];for(var k=0;k<24;k++){var a0=k/24*6.2832,a1=(k+1)/24*6.2832,R=BR_R[0]*0.86;
+      var zw=BR_WALL-0.003;disc.push(cx,cy,zw,cx+Math.cos(a0)*R,cy+Math.sin(a0)*R,zw,cx+Math.cos(a1)*R,cy+Math.sin(a1)*R,zw);}});
+    gl.bindBuffer(gl.ARRAY_BUFFER,B.gP);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(disc),gl.STREAM_DRAW);att(a.aP,B.gP,3);att(a.aN,null);att(a.aW,null);att(a.aA,null);
+    gl.vertexAttrib3f(a.aN,0,0,1);gl.vertexAttrib1f(a.aW,0);gl.vertexAttrib1f(a.aA,0);
+    gl.uniform1f(u.uMode,1);gl.uniform3f(u.uCol,0.93,0.84,0.62);gl.drawArrays(gl.TRIANGLES,0,disc.length/3);   // fatty tissue backing (as in the section)
+    // 2) ducts
+    gl.bindBuffer(gl.ARRAY_BUFFER,B.gP);gl.bufferData(gl.ARRAY_BUFFER,G.lines,gl.STREAM_DRAW);att(a.aP,B.gP,3);
+    gl.uniform3f(u.uCol,0.95,0.62,0.70);gl.drawArrays(gl.LINES,0,G.lines.length/3);
+    // 3) lobules (sphere sprites; size per point via aW)
+    gl.bindBuffer(gl.ARRAY_BUFFER,B.gP);gl.bufferData(gl.ARRAY_BUFFER,G.pts,gl.STREAM_DRAW);att(a.aP,B.gP,3);
+    gl.bindBuffer(gl.ARRAY_BUFFER,B.gS);gl.bufferData(gl.ARRAY_BUFFER,G.sizes,gl.STREAM_DRAW);att(a.aW,B.gS,1);
+    gl.uniform1f(u.uMode,2);gl.uniform3f(u.uCol,0.90,0.47,0.58);gl.drawArrays(gl.POINTS,0,G.sizes.length);
+    // 4) body; breast skin blends over the glands
+    gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);
+    att(a.aP,B.bP,3);att(a.aN,B.bN,3);att(a.aW,B.bW,1);att(a.aA,B.bA,1);gl.uniform1f(u.uMode,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,B.bI);gl.drawElements(gl.TRIANGLES,B.ix.length,gl.UNSIGNED_SHORT,0);
+    gl.disable(gl.CULL_FACE);gl.disable(gl.BLEND);
+    g2.save();g2.globalAlpha=0.22+0.78*adultView;g2.drawImage(gc,x0,y0,bw,bh);g2.restore();
+    if(adultView<0.5){g2.fillStyle='rgba(199,211,226,.9)';g2.font='600 11px "IBM Plex Sans",Roboto,sans-serif';g2.textAlign='center';
+      g2.fillText('3D view shows the adult breast',x0+bw/2,y0+bh*0.5-6);g2.fillText('→ see the section for this stage',x0+bw/2,y0+bh*0.5+10);g2.textAlign='left';}
+    var c=Math.cos(yaw),s=Math.sin(yaw),ap=[BR3.apex[0],BR3.apex[1]+sh.droop,BR3.apex[2]+sh.grow];
+    return {x:x0+ox+(ap[0]*c+ap[2]*s)*Sc,y:y0+oy-ap[1]*Sc,r:0};
+  }catch(e){BR3=false;return null;}
 }
 function pointInPolygon(x,y,poly){
   var inside=false;
@@ -1726,6 +1888,11 @@ function drawBreastDev(cv){
     if(p>=1){BDEV.stage=BDEV.target;BDEV.animating=false;}
   }
   var S=devLerp(BDEV.stage);
+  // adult reference figure on the left; the cut-section is drawn in the remaining width
+  var bodyW=Math.min(w*0.36,h*0.95),ring=drawBreast3D(g,4,4,bodyW,h-8,BDEV.stage,S);
+  if(!ring){bodyW=Math.min(w*0.30,h*0.62);ring=drawRefBody(g,4,4,bodyW,h-8);}   // fallback: full reference figure
+  var secX=ring?bodyW+10:0,fullW=w;
+  if(ring){g.save();g.translate(secX,0);w=w-secX;}
 
   var baseX=w*0.28, midY=h*0.55, chestTop=h*0.10, chestBot=h*0.92;
   g.strokeStyle='rgba(200,200,205,.5)';g.fillStyle='rgba(215,215,220,.5)';g.lineWidth=1;
@@ -1783,7 +1950,7 @@ function drawBreastDev(cv){
   g.fillStyle=nipGrad;g.beginPath();g.arc(nippleX,nippleY,4.2,0,6.2832);g.fill();
 
   var hilumX=nippleX-7, hilumY=nippleY;
-  var lobeCount=Math.round(S.lobes), slots=12;
+  var lobeCount=Math.round(S.lobes), slots=12, lobLX=null,lobLY=null,ductLX=null,ductLY=null;
   g.lineWidth=1;
   for(var li=0;li<Math.min(slots,lobeCount);li++){
     var frac=slots<=1?0:li/(slots-1);
@@ -1798,10 +1965,12 @@ function drawBreastDev(cv){
     var midx=hilumX-Math.cos(ang)*dist*0.55 - Math.sin(ang)*wig, midy=hilumY+Math.sin(ang)*dist*0.55 + Math.cos(ang)*wig;
     g.strokeStyle='rgba(217,120,143,.4)';
     g.beginPath();g.moveTo(hilumX,hilumY);g.quadraticCurveTo(midx,midy,tx,ty);g.stroke();
-    var clusterN=2+(li%2);
+    var clusterN=Math.max(1,Math.round((1.5+(li%2))*S.cluster));
+    if(li===2){lobLX=tx;lobLY=ty;}
+    if(li===Math.min(4,lobeCount-1)){ductLX=midx;ductLY=midy;}
     for(var ci=0;ci<clusterN;ci++){
       var cang=ci*2.4+li*0.7;
-      var cr=1.6*S.lobeScale;
+      var cr=1.6*S.lobeScale*(1+0.14*clusterN);
       var lx2=tx+Math.cos(cang)*cr*1.3, ly2=ty+Math.sin(cang)*cr*1.3;
       var lr=Math.max(0.6,(2.1+(ci%2)*0.7)*S.lobeScale);
       var lfix=pullInside(lx2,ly2,lr,tx,ty,moundPoly);
@@ -1813,9 +1982,30 @@ function drawBreastDev(cv){
     }
   }
 
-  g.fillStyle='rgba(147,163,186,.75)';g.font='10px "IBM Plex Sans",Roboto,sans-serif';g.textAlign='left';g.fillText('Estrogen',8,14);
+  // structure labels (right-hand column, thin leader lines)
+  var lx=Math.min(w-4,nippleX+22),lab=function(t,ty,px,py){g.strokeStyle='rgba(147,163,186,.45)';g.lineWidth=0.8;g.beginPath();g.moveTo(lx-3,ty-3);g.lineTo(px,py);g.stroke();g.fillStyle='rgba(199,211,226,.85)';g.fillText(t,lx,ty);};
+  g.font='10px "IBM Plex Sans",Roboto,sans-serif';g.textAlign='left';
+  if(lx+60<w+40){
+    lab('nipple',nippleY+3,nippleX+5,nippleY);
+    if(lobLX!==null&&S.lobes>=4)lab('lobules',cy-halfSpan*0.62,lobLX,lobLY);
+    if(ductLX!==null)lab('duct',cy-halfSpan*0.25,ductLX,ductLY);
+    lab('fatty tissue',cy+halfSpan*0.55,attachX+moundAmt*0.35,cy+halfSpan*0.42);
+    lab('pectoral muscle',cy+halfSpan*0.86,baseX+3,cy+halfSpan*0.70);
+  }
+  // hormone bars
+  g.fillStyle='rgba(147,163,186,.75)';g.fillText('Estrogen',8,14);
   g.strokeStyle='rgba(147,163,186,.4)';g.lineWidth=1;g.strokeRect(8,18,60,6);
   g.fillStyle='#e58fb0';g.fillRect(8,18,60*Math.max(0,Math.min(1,S.estro/100)),6);
+  g.fillStyle='rgba(147,163,186,.75)';g.fillText('Prolactin',8,38);
+  g.strokeStyle='rgba(147,163,186,.4)';g.strokeRect(8,42,60,6);
+  g.fillStyle='#e9c46a';g.fillRect(8,42,60*Math.max(0,Math.min(1,S.prl/100)),6);
+  if(ring){
+    g.restore();w=fullW;
+    // ring on the reference figure + leader line to the section
+    if(ring.r){g.strokeStyle='rgba(229,143,176,.95)';g.lineWidth=1.6;g.beginPath();g.arc(ring.x,ring.y,ring.r,0,6.2832);g.stroke();}
+    g.strokeStyle='rgba(229,143,176,.55)';g.lineWidth=1;g.setLineDash([4,3]);g.beginPath();g.moveTo(ring.x+ring.r,ring.y);g.lineTo(secX+attachX-2,cy);g.stroke();g.setLineDash([]);
+    g.fillStyle='rgba(147,163,186,.7)';g.textAlign='center';g.fillText(ring.r?'section through breast':'3D close-up \u00b7 glands seen through the skin',secX/2+2,h-4);g.textAlign='left';
+  }
 }
 
 var OV_DORMANT=[[-0.5,0.55,3],[0.45,0.42,2.3],[-0.15,-0.5,2.6],[0.55,-0.15,2]]; // small resting follicles for texture
